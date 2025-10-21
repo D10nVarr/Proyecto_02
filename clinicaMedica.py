@@ -4,7 +4,7 @@ class Usuario:
         self.rol = rol
 
     def iniciar_sesion(self):
-        print(f"{self.nombre} ha iniciado sesión como {self.rol}.")
+        print(f"{self.nombre} ha iniciado sesión con el rol de {self.rol}.")
 
 
 class Doctor(Usuario):
