@@ -1,96 +1,106 @@
-import customtkinter as ctk
-from collections import deque
+import sqlite3
 from datetime import datetime
+import customtkinter as ctk
+from tkinter import messagebox
 
-ctk.set_appearance_mode("system")
-ctk.set_default_color_theme("blue")
-
-class Inventario:
-    def __init__(self):
-        self._items = {}
-        self._registro = deque()
-
-    def agregar(self, nombre, cantidad, usuario):
-        if cantidad <= 0:
-            raise ValueError("La cantidad debe ser mayor que 0")
-        prev = self._items.get(nombre, 0)
-        self._items[nombre] = prev + cantidad
-        self._registro.appendleft({
-            "tipo": "entrada",
-            "medicamento": nombre,
-            "cantidad": cantidad,
-            "usuario": usuario,
-            "fecha": datetime.now()
-        })
-
-    def vender(self, nombre, cantidad, usuario):
-        if cantidad <= 0:
-            raise ValueError("La cantidad debe ser mayor que 0")
-        exist = self._items.get(nombre, 0)
-        if exist < cantidad:
-            raise ValueError(f"Stock insuficiente para '{nombre}' (hay {exist})")
-        self._items[nombre] = exist - cantidad
-        if self._items[nombre] == 0:
-            del self._items[nombre]
-        self._registro.appendleft({
-            "tipo": "salida",
-            "medicamento": nombre,
-            "cantidad": cantidad,
-            "usuario": usuario,
-            "fecha": datetime.now()
-        })
-
-    def listar(self):
-        return dict(self._items)
-
-    def registro(self, limit=100):
-        return list(self._registro)[:limit]
-
-class Usuario:
-    def __init__(self, nombre, rol, app=None):
-        self.nombre = nombre
-        self.rol = rol
-        self.app = app
-
-    def iniciar_sesion(self):
-        print(f"{self.nombre} ha iniciado sesión con el rol de {self.rol}.")
-
-class Doctor(Usuario):
-    def __init__(self, nombre, especialidad, app=None):
-        super().__init__(nombre, "Doctor", app)
-        self.especialidad = especialidad
-
-    def ficha_medica(self, paciente_nombre, datos):
-        self.app.guardar_ficha(paciente_nombre, datos, self.nombre)
-
-    def crear_historial_medico(self, paciente_nombre, historial):
-        self.app.guardar_historial(paciente_nombre, historial, self.nombre)
-
-    def crear_registro_cita(self, paciente_nombre, fecha_hora, motivo):
-        self.app.guardar_cita(paciente_nombre, fecha_hora, motivo, self.nombre)
-
-    def crear_inventario(self, nombre_medicamento, cantidad):
-        self.app.inventario.agregar(nombre_medicamento, cantidad, self.nombre)
-
-    def vender_medicamento(self, nombre_medicamento, cantidad):
-        self.app.inventario.vender(nombre_medicamento, cantidad, self.nombre)
-
-class Contador(Usuario):
-    def __init__(self, nombre, app=None):
-        super().__init__(nombre, "Contador", app)
-
-    def ver_inventario(self):
-        return self.app.inventario.listar()
-
-    def ver_registro(self):
-        return self.app.inventario.registro()
-
-class Proveedor(Usuario):
-    def __init__(self, nombre, app=None):
-        super().__init__(nombre, "Proveedor", app)
-
-    def vender_medicamento(self, nombre_medicamento, cantidad):
-        self.app.inventario.vender(nombre_medicamento, cantidad, self.nombre)
+DB_FILE = "clinica.db"
 
 
+# Funciones de base de datos
 
+def ejecutar(query, params=()):
+    with sqlite3.connect(DB_FILE) as conn:
+        cur = conn.cursor()
+        cur.execute(query, params)
+        conn.commit()
+        return cur
+
+def crear_tablas_y_usuarios():
+    # Tabla usuarios
+    ejecutar("""CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        rol TEXT NOT NULL,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+    )""")
+    ejecutar("""INSERT OR REPLACE INTO usuarios (nombre, rol, username, password) VALUES
+        ('Dr. Juan', 'Doctor', 'docjuan', '1234'),
+        ('Contador', 'Contador', 'contador', '5678'),
+        ('Proveedor', 'Proveedor', 'proveedor', '9012')""")
+
+    # Tabla productos
+    ejecutar("""CREATE TABLE IF NOT EXISTS productos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL UNIQUE,
+        precio REAL NOT NULL,
+        stock INTEGER NOT NULL
+    )""")
+
+    # Tabla movimientos
+    ejecutar("""CREATE TABLE IF NOT EXISTS movimientos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tipo TEXT NOT NULL,
+        producto_id INTEGER NOT NULL,
+        cantidad INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        FOREIGN KEY(producto_id) REFERENCES productos(id),
+        FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+    )""")
+
+    # Tabla fichas medicas
+    ejecutar("""CREATE TABLE IF NOT EXISTS fichas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente TEXT NOT NULL,
+        datos TEXT NOT NULL,
+        creado_por INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        FOREIGN KEY(creado_por) REFERENCES usuarios(id)
+    )""")
+
+    # Tabla citas
+    ejecutar("""CREATE TABLE IF NOT EXISTS citas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT NOT NULL,
+        paciente TEXT NOT NULL,
+        creado_por INTEGER NOT NULL,
+        registrado_en TEXT NOT NULL,
+        FOREIGN KEY(creado_por) REFERENCES usuarios(id)
+    )""")
+
+
+# Funciones de negocio
+
+def validar_usuario(username, password):
+    cur = ejecutar("SELECT id, rol, nombre FROM usuarios WHERE username=? AND password=?", (username, password))
+    return cur.fetchone()  # (id, rol, nombre) o None
+
+def agregar_producto(nombre, precio, stock, usuario_id):
+    cur = ejecutar("SELECT id, stock FROM productos WHERE nombre=?", (nombre,))
+    row = cur.fetchone()
+    if row:
+        pid, exist = row
+        ejecutar("UPDATE productos SET stock=?, precio=? WHERE id=?", (exist+stock, precio, pid))
+        pid = pid
+    else:
+        cur = ejecutar("INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)", (nombre, precio, stock))
+        pid = cur.lastrowid
+    ejecutar("INSERT INTO movimientos (tipo, producto_id, cantidad, usuario_id, fecha) VALUES (?, ?, ?, ?, ?)",
+             ("entrada", pid, stock, usuario_id, datetime.now().isoformat()))
+
+def vender_producto(nombre, cantidad, usuario_id):
+    cur = ejecutar("SELECT id, stock FROM productos WHERE nombre=?", (nombre,))
+    row = cur.fetchone()
+    if not row:
+        raise ValueError("Producto no existe")
+    pid, stock = row
+    if stock < cantidad:
+        raise ValueError(f"Stock insuficiente ({stock} disponible)")
+    ejecutar("UPDATE productos SET stock=? WHERE id=?", (stock-cantidad, pid))
+    ejecutar("INSERT INTO movimientos (tipo, producto_id, cantidad, usuario_id, fecha) VALUES (?, ?, ?, ?, ?)",
+             ("salida", pid, cantidad, usuario_id, datetime.now().isoformat()))
+
+def obtener_productos():
+    cur = ejecutar("SELECT * FROM productos")
+    return cur.fetchall()
