@@ -179,3 +179,19 @@ class Proveedor(Usuario):
             ("salida", pid, cantidad, usuario_id, datetime.now().isoformat())
         )
 
+#####Funcionamiento DB---------------------------------------------------------------
+DatBas=BaseDatos()
+
+print("Menu")
+print("1. Iniciar sesión")
+
+opcion=input("Seleccione una opcion: ")
+
+match opcion:
+    case "1":
+        usuario=input("Ingrese su usuario: ")
+        contra=input("Ingrese su contra: ")
+
+        persona=Usuario(None,None,DatBas)
+
+        persona.iniciar_sesion(usuario, contra)
