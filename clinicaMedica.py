@@ -1,103 +1,195 @@
 import os
 import sqlite3
+from datetime import datetime
 
-DB_FILE = "clinica.db"
+DB_NAME = "clinica.db"
 
-def conn():
-    c = sqlite3.connect(DB_FILE, timeout=10)
-    c.execute("PRAGMA foreign_keys = ON")
-    return c
+class BaseDatos:
+    def __init__(self, db_file=DB_NAME):
+        self.db_file = db_file
 
-def ejecutar(sql, params=()):
-    with conn() as c:
-        cur = c.cursor()
-        cur.execute(sql, params)
-        c.commit()
-        return cur
+        self._crear_tablas()
 
-def ejecutar_many(sql, seq_params):
-    with conn() as c:
-        cur = c.cursor()
-        cur.executemany(sql, seq_params)
-        c.commit()
-        return cur
+    def _conn(self):
+        conn = sqlite3.connect(self.db_file, timeout=10)
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
+        return conn
 
-def crear_tablas():
-    ejecutar("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        rol TEXT NOT NULL,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
-    )
-    """)
-    ejecutar("""
-    CREATE TABLE IF NOT EXISTS productos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL UNIQUE,
-        precio REAL NOT NULL,
-        stock INTEGER NOT NULL
-    )
-    """)
-    ejecutar("""
-    CREATE TABLE IF NOT EXISTS movimientos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tipo TEXT NOT NULL,
-        producto_id INTEGER NOT NULL,
-        cantidad INTEGER NOT NULL,
-        usuario_id INTEGER NOT NULL,
-        fecha TEXT NOT NULL,
-        FOREIGN KEY(producto_id) REFERENCES productos(id),
-        FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
-    )
-    """)
-    ejecutar("""
-    CREATE TABLE IF NOT EXISTS pacientes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        telefono TEXT,
-        procedencia TEXT,
-        ocupacion TEXT,
-        antecedentes TEXT,
-        fecha_nacimiento TEXT
-    )
-    """)
-    ejecutar("""
-    CREATE TABLE IF NOT EXISTS fichas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        paciente_id INTEGER NOT NULL,
-        datos TEXT NOT NULL,
-        creado_por INTEGER NOT NULL,
-        fecha TEXT NOT NULL,
-        FOREIGN KEY(paciente_id) REFERENCES pacientes(id),
-        FOREIGN KEY(creado_por) REFERENCES usuarios(id)
-    )
-    """)
-    ejecutar("""
-    CREATE TABLE IF NOT EXISTS citas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        fecha TEXT NOT NULL,
-        paciente_id INTEGER NOT NULL,
-        creado_por INTEGER NOT NULL,
-        registrado_en TEXT NOT NULL,
-        FOREIGN KEY(paciente_id) REFERENCES pacientes(id),
-        FOREIGN KEY(creado_por) REFERENCES usuarios(id)
-    )
-    """)
+    def ejecutar(self, query, params=(), fetch=False):
 
-def insertar_datos_iniciales():
-    ejecutar("""
-    INSERT OR IGNORE INTO usuarios (id, nombre, rol, username, password) VALUES
-        (1, 'Dr. Maggie', 'Doctor', 'docanles', '1234'),
-        (2, 'Contador', 'Contador', 'contalover', '5678'),
-        (3, 'Proveedor', 'Proveedor', 'sifio', '9012')
-    """)
+        with self._conn() as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            conn.commit()
+            if fetch:
+                return cur.fetchall()
+            if query.strip().upper().startswith("INSERT"):
+                return cur.lastrowid
+            return cur.rowcount
 
-def main():
-    crear_tablas()
-    insertar_datos_iniciales()
-    print("Base de datos creada en:", os.path.abspath(DB_FILE))
+    def _crear_tablas(self):
+        self.ejecutar("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                rol TEXT NOT NULL,
+                username TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL
+            )
+        """)
+        self.ejecutar("""
+            INSERT OR IGNORE INTO usuarios (id, nombre, rol, username, password) VALUES
+                (1, 'Dr. Maggie', 'Doctor', 'docanles', '1234'),
+                (2, 'Contador', 'Contador', 'contalover', '5678'),
+                (3, 'Proveedor', 'Proveedor', 'sifio', '9012')
+        """)
 
-if __name__ == "__main__":
-    main()
+        self.ejecutar("""
+            CREATE TABLE IF NOT EXISTS productos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL UNIQUE,
+                precio REAL NOT NULL,
+                stock INTEGER NOT NULL
+            )
+        """)
+
+        self.ejecutar("""
+            CREATE TABLE IF NOT EXISTS movimientos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo TEXT NOT NULL,
+                producto_id INTEGER NOT NULL,
+                cantidad INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                fecha TEXT NOT NULL,
+                FOREIGN KEY(producto_id) REFERENCES productos(id),
+                FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+            )
+        """)
+        self.ejecutar("""
+            CREATE TABLE IF NOT EXISTS pacientes (
+                DPI INTEGER PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                telefono TEXT,
+                procedencia TEXT,
+                ocupacion TEXT,
+                antecedentes TEXT,
+                fecha_nacimiento TEXT
+            )
+        """)
+
+        self.ejecutar("""
+            CREATE TABLE IF NOT EXISTS fichas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                paciente_id INTEGER NOT NULL,
+                datos TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                FOREIGN KEY(paciente_id) REFERENCES pacientes(DPI)
+            )
+        """)
+
+        self.ejecutar("""
+            CREATE TABLE IF NOT EXISTS citas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha TEXT NOT NULL,
+                paciente_id INTEGER NOT NULL,
+                creado_por INTEGER NOT NULL,
+                registrado_en TEXT NOT NULL,
+                FOREIGN KEY(paciente_id) REFERENCES pacientes(id),
+                FOREIGN KEY(creado_por) REFERENCES usuarios(id)
+            )
+        """)
+
+class Usuario:
+    def __init__(self, nombre, rol, db: BaseDatos):
+        self.nombre = nombre
+        self.rol = rol
+        self.db = db
+        self.id = None
+
+    def iniciar_sesion(self, username, password):
+        filas = self.db.ejecutar(
+            "SELECT * FROM usuarios WHERE username=? AND password=?",
+            (username, password), fetch=True
+        )
+        if filas:
+            row = filas[0]
+            self.id = row["id"]
+            self.nombre = row["nombre"]
+            self.rol = row["rol"]
+            return row
+        return None
+
+class Paciente:
+    def __init__(self, nombre, telefono=None, procedencia=None, ocupacion=None, antecedentes=None, fecha_nacimiento=None, db: BaseDatos=None):
+        self.nombre = nombre
+        self.telefono = telefono
+        self.procedencia = procedencia
+        self.ocupacion = ocupacion
+        self.antecedentes = antecedentes
+        self.fecha_nacimiento = fecha_nacimiento
+        self.db = db
+
+    def guardar(self):
+
+        if not self.db:
+            raise RuntimeError("No se proporcionó instancia de BaseDatos en Paciente")
+        query = """
+            INSERT INTO pacientes (nombre, telefono, procedencia, ocupacion, antecedentes, fecha_nacimiento)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """
+        return self.db.ejecutar(query, (self.nombre, self.telefono, self.procedencia, self.ocupacion, self.antecedentes, self.fecha_nacimiento))
+
+    @staticmethod
+    def listar(db: BaseDatos):
+        filas = db.ejecutar("SELECT * FROM pacientes ORDER BY id DESC", fetch=True)
+        return filas or []
+
+class Doctor(Usuario):
+    def crear_ficha_medica(self, paciente_id, datos):
+        if not self.id:
+            raise RuntimeError("Doctor.id no está seteado")
+        self.db.ejecutar(
+            "INSERT INTO fichas (paciente_id, datos, creado_por, fecha) VALUES (?, ?, ?, ?)",
+            (paciente_id, datos, self.id, datetime.now().isoformat())
+        )
+
+class Contador(Usuario):
+    def ver_inventario(self):
+        productos = self.db.ejecutar("SELECT * FROM productos", fetch=True)
+        return productos or []
+
+class Proveedor(Usuario):
+    def agregar_producto(self, nombre, precio, stock):
+        cur = self.db.ejecutar("SELECT id, stock FROM productos WHERE nombre=?", (nombre,), fetch=True)
+        if cur:
+            pid, exist = cur[0]['id'], cur[0]['stock']
+            self.db.ejecutar("UPDATE productos SET stock=?, precio=? WHERE id=?", (exist+stock, precio, pid))
+        else:
+            self.db.ejecutar("INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)", (nombre, precio, stock))
+
+    @staticmethod
+    def vender_producto(db: BaseDatos, nombre, cantidad, doctor_user, doctor_pass, proveedor_id):
+        cur = db.ejecutar("SELECT id, stock, precio FROM productos WHERE nombre=?", (nombre,), fetch=True)
+        if not cur:
+            raise ValueError("Producto no existe")
+        pid, stock, precio_unitario = cur[0]['id'], cur[0]['stock'], cur[0]['precio']
+
+        if stock < cantidad:
+            raise ValueError(f"Stock insuficiente ({stock} disponible)")
+
+        doctor = db.ejecutar("SELECT * FROM usuarios WHERE username=? AND password=? AND rol='Doctor'",
+                             (doctor_user, doctor_pass), fetch=True)
+        if not doctor:
+            raise ValueError("Autorización del doctor fallida")
+
+        total = cantidad * precio_unitario
+
+        db.ejecutar("UPDATE productos SET stock=? WHERE id=?", (stock-cantidad, pid))
+
+        db.ejecutar(
+            "INSERT INTO movimientos (tipo, producto_id, cantidad, usuario_id, fecha, precio_unitario, total) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("salida", pid, cantidad, proveedor_id, datetime.now().isoformat(), precio_unitario, total)
+        )
+
+        return {"producto": nombre, "cantidad": cantidad, "precio_unitario": precio_unitario, "total": total}
