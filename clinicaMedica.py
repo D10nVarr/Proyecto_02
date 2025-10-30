@@ -7,7 +7,8 @@ DB_NAME = "clinica.db"
 class BaseDatos:
     def __init__(self, db_file=DB_NAME):
         self.db_file = db_file
-
+        if not os.path.exists(self.db_file):
+            print(f"Base de datos {self.db_file} no existe, se creará ahora.")
         self._crear_tablas()
 
     def _conn(self):
@@ -17,7 +18,6 @@ class BaseDatos:
         return conn
 
     def ejecutar(self, query, params=(), fetch=False):
-
         with self._conn() as conn:
             cur = conn.cursor()
             cur.execute(query, params)
@@ -44,7 +44,6 @@ class BaseDatos:
                 (2, 'Contador', 'Contador', 'contalover', '5678'),
                 (3, 'Proveedor', 'Proveedor', 'sifio', '9012')
         """)
-
         self.ejecutar("""
             CREATE TABLE IF NOT EXISTS productos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +52,6 @@ class BaseDatos:
                 stock INTEGER NOT NULL
             )
         """)
-
         self.ejecutar("""
             CREATE TABLE IF NOT EXISTS movimientos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +60,8 @@ class BaseDatos:
                 cantidad INTEGER NOT NULL,
                 usuario_id INTEGER NOT NULL,
                 fecha TEXT NOT NULL,
+                precio_unitario REAL,
+                total REAL,
                 FOREIGN KEY(producto_id) REFERENCES productos(id),
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
@@ -77,7 +77,6 @@ class BaseDatos:
                 fecha_nacimiento TEXT
             )
         """)
-
         self.ejecutar("""
             CREATE TABLE IF NOT EXISTS fichas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,7 +86,6 @@ class BaseDatos:
                 FOREIGN KEY(paciente_id) REFERENCES pacientes(DPI)
             )
         """)
-
         self.ejecutar("""
             CREATE TABLE IF NOT EXISTS citas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,7 +93,7 @@ class BaseDatos:
                 paciente_id INTEGER NOT NULL,
                 creado_por INTEGER NOT NULL,
                 registrado_en TEXT NOT NULL,
-                FOREIGN KEY(paciente_id) REFERENCES pacientes(id),
+                FOREIGN KEY(paciente_id) REFERENCES pacientes(DPI),
                 FOREIGN KEY(creado_por) REFERENCES usuarios(id)
             )
         """)
@@ -131,7 +129,6 @@ class Paciente:
         self.db = db
 
     def guardar(self):
-
         if not self.db:
             raise RuntimeError("No se proporcionó instancia de BaseDatos en Paciente")
         query = """
@@ -142,7 +139,7 @@ class Paciente:
 
     @staticmethod
     def listar(db: BaseDatos):
-        filas = db.ejecutar("SELECT * FROM pacientes ORDER BY id DESC", fetch=True)
+        filas = db.ejecutar("SELECT * FROM pacientes ORDER BY DPI DESC", fetch=True)
         return filas or []
 
 class Doctor(Usuario):
@@ -150,8 +147,8 @@ class Doctor(Usuario):
         if not self.id:
             raise RuntimeError("Doctor.id no está seteado")
         self.db.ejecutar(
-            "INSERT INTO fichas (paciente_id, datos, creado_por, fecha) VALUES (?, ?, ?, ?)",
-            (paciente_id, datos, self.id, datetime.now().isoformat())
+            "INSERT INTO fichas (paciente_id, datos, fecha) VALUES (?, ?, ?)",
+            (paciente_id, datos, datetime.now().isoformat())
         )
 
 class Contador(Usuario):
@@ -174,22 +171,16 @@ class Proveedor(Usuario):
         if not cur:
             raise ValueError("Producto no existe")
         pid, stock, precio_unitario = cur[0]['id'], cur[0]['stock'], cur[0]['precio']
-
         if stock < cantidad:
             raise ValueError(f"Stock insuficiente ({stock} disponible)")
-
         doctor = db.ejecutar("SELECT * FROM usuarios WHERE username=? AND password=? AND rol='Doctor'",
                              (doctor_user, doctor_pass), fetch=True)
         if not doctor:
             raise ValueError("Autorización del doctor fallida")
-
         total = cantidad * precio_unitario
-
         db.ejecutar("UPDATE productos SET stock=? WHERE id=?", (stock-cantidad, pid))
-
         db.ejecutar(
             "INSERT INTO movimientos (tipo, producto_id, cantidad, usuario_id, fecha, precio_unitario, total) VALUES (?, ?, ?, ?, ?, ?, ?)",
             ("salida", pid, cantidad, proveedor_id, datetime.now().isoformat(), precio_unitario, total)
         )
-
         return {"producto": nombre, "cantidad": cantidad, "precio_unitario": precio_unitario, "total": total}
