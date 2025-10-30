@@ -167,10 +167,10 @@ class Proveedor(Usuario):
 
     @staticmethod
     def vender_producto(db: BaseDatos, nombre, cantidad, doctor_user, doctor_pass, proveedor_id):
-        cur = db.ejecutar("SELECT id, stock, precio FROM productos WHERE nombre=?", (nombre,), fetch=True)
-        if not cur:
+        producos = db.ejecutar("SELECT id, stock, precio FROM productos WHERE nombre=?", (nombre,), fetch=True)
+        if not producos:
             raise ValueError("Producto no existe")
-        pid, stock, precio_unitario = cur[0]['id'], cur[0]['stock'], cur[0]['precio']
+        pid, stock, precio_unitario = producos[0]['id'], producos[0]['stock'], producos[0]['precio']
         if stock < cantidad:
             raise ValueError(f"Stock insuficiente ({stock} disponible)")
         doctor = db.ejecutar("SELECT * FROM usuarios WHERE username=? AND password=? AND rol='Doctor'",
