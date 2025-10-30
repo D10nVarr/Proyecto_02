@@ -119,10 +119,10 @@ class Usuario:
         return None
 
 class Paciente:
-    def __init__(self, DPI, nombre, telefono=None, db: BaseDatos=None):
+    def __init__(self, DPI, nombre, telefonos=None, db: BaseDatos=None):
         self.DPI = DPI
         self.nombre = nombre
-        self.telefono = telefono
+        self.telefono = telefonos
         self.db = db
 
     def guardar(self):
