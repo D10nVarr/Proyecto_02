@@ -12,21 +12,21 @@ class BaseDatos:
         self._crear_tablas()
 
     def _conn(self):
-        conn = sqlite3.connect(self.db_file, timeout=10)
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.row_factory = sqlite3.Row
-        return conn
+        conexcion = sqlite3.connect(self.db_file, timeout=10)
+        conexcion.execute("PRAGMA foreign_keys = ON")
+        conexcion.row_factory = sqlite3.Row
+        return conexcion
 
     def ejecutar(self, query, params=(), fetch=False):
-        with self._conn() as conn:
-            cur = conn.cursor()
-            cur.execute(query, params)
-            conn.commit()
+        with self._conn() as conexion2:
+            ejecutarcr = conexion2.cursor()
+            ejecutarcr.execute(query, params)
+            conexion2.commit()
             if fetch:
-                return cur.fetchall()
+                return ejecutarcr.fetchall()
             if query.strip().upper().startswith("INSERT"):
-                return cur.lastrowid
-            return cur.rowcount
+                return ejecutarcr.lastrowid
+            return ejecutarcr.rowcount
 
     def _crear_tablas(self):
         self.ejecutar("""
@@ -70,11 +70,7 @@ class BaseDatos:
             CREATE TABLE IF NOT EXISTS pacientes (
                 DPI INTEGER PRIMARY KEY,
                 nombre TEXT NOT NULL,
-                telefono TEXT,
-                procedencia TEXT,
-                ocupacion TEXT,
-                antecedentes TEXT,
-                fecha_nacimiento TEXT
+                telefono TEXT
             )
         """)
         self.ejecutar("""
@@ -83,6 +79,10 @@ class BaseDatos:
                 paciente_id INTEGER NOT NULL,
                 datos TEXT NOT NULL,
                 fecha TEXT NOT NULL,
+                procedencia TEXT,
+                ocupacion TEXT,
+                antecedentes TEXT,
+                fecha_nacimiento TEXT,
                 FOREIGN KEY(paciente_id) REFERENCES pacientes(DPI)
             )
         """)
@@ -111,31 +111,25 @@ class Usuario:
             (username, password), fetch=True
         )
         if filas:
-            row = filas[0]
-            self.id = row["id"]
-            self.nombre = row["nombre"]
-            self.rol = row["rol"]
-            return row
+            usuario = filas[0]
+            self.id = usuario["id"]
+            self.nombre = usuario["nombre"]
+            self.rol = usuario["rol"]
+            return usuario
         return None
 
 class Paciente:
-    def __init__(self, nombre, telefono=None, procedencia=None, ocupacion=None, antecedentes=None, fecha_nacimiento=None, db: BaseDatos=None):
+    def __init__(self, DPI, nombre, telefono=None, db: BaseDatos=None):
+        self.DPI = DPI
         self.nombre = nombre
         self.telefono = telefono
-        self.procedencia = procedencia
-        self.ocupacion = ocupacion
-        self.antecedentes = antecedentes
-        self.fecha_nacimiento = fecha_nacimiento
         self.db = db
 
     def guardar(self):
         if not self.db:
             raise RuntimeError("No se proporcionó instancia de BaseDatos en Paciente")
-        query = """
-            INSERT INTO pacientes (nombre, telefono, procedencia, ocupacion, antecedentes, fecha_nacimiento)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """
-        return self.db.ejecutar(query, (self.nombre, self.telefono, self.procedencia, self.ocupacion, self.antecedentes, self.fecha_nacimiento))
+        query = "INSERT INTO pacientes (DPI, nombre, telefono) VALUES (?, ?, ?)"
+        return self.db.ejecutar(query, (self.DPI, self.nombre, self.telefono))
 
     @staticmethod
     def listar(db: BaseDatos):
@@ -143,12 +137,15 @@ class Paciente:
         return filas or []
 
 class Doctor(Usuario):
-    def crear_ficha_medica(self, paciente_id, datos):
+    def crear_ficha_medica(self, paciente_id, datos, procedencia=None, ocupacion=None, antecedentes=None, fecha_nacimiento=None):
         if not self.id:
             raise RuntimeError("Doctor.id no está seteado")
         self.db.ejecutar(
-            "INSERT INTO fichas (paciente_id, datos, fecha) VALUES (?, ?, ?)",
-            (paciente_id, datos, datetime.now().isoformat())
+            """
+            INSERT INTO fichas (paciente_id, datos, fecha, procedencia, ocupacion, antecedentes, fecha_nacimiento)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (paciente_id, datos, datetime.now().isoformat(), procedencia, ocupacion, antecedentes, fecha_nacimiento)
         )
 
 class Contador(Usuario):
@@ -158,23 +155,22 @@ class Contador(Usuario):
 
 class Proveedor(Usuario):
     def agregar_producto(self, nombre, precio, stock):
-        cur = self.db.ejecutar("SELECT id, stock FROM productos WHERE nombre=?", (nombre,), fetch=True)
-        if cur:
-            pid, exist = cur[0]['id'], cur[0]['stock']
-            self.db.ejecutar("UPDATE productos SET stock=?, precio=? WHERE id=?", (exist+stock, precio, pid))
+        agregarpd = self.db.ejecutar("SELECT id, stock FROM productos WHERE nombre=?", (nombre,), fetch=True)
+        if agregarpd:
+            PRD, exist = agregarpd[0]['id'], agregarpd[0]['stock']
+            self.db.ejecutar("UPDATE productos SET stock=?, precio=? WHERE id=?", (exist+stock, precio, PRD))
         else:
             self.db.ejecutar("INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)", (nombre, precio, stock))
 
     @staticmethod
     def vender_producto(db: BaseDatos, nombre, cantidad, doctor_user, doctor_pass, proveedor_id):
-        producos = db.ejecutar("SELECT id, stock, precio FROM productos WHERE nombre=?", (nombre,), fetch=True)
-        if not producos:
+        productos = db.ejecutar("SELECT id, stock, precio FROM productos WHERE nombre=?", (nombre,), fetch=True)
+        if not productos:
             raise ValueError("Producto no existe")
-        pid, stock, precio_unitario = producos[0]['id'], producos[0]['stock'], producos[0]['precio']
+        pid, stock, precio_unitario = productos[0]['id'], productos[0]['stock'], productos[0]['precio']
         if stock < cantidad:
             raise ValueError(f"Stock insuficiente ({stock} disponible)")
-        doctor = db.ejecutar("SELECT * FROM usuarios WHERE username=? AND password=? AND rol='Doctor'",
-                             (doctor_user, doctor_pass), fetch=True)
+        doctor = db.ejecutar("SELECT * FROM usuarios WHERE username=? AND password=? AND rol='Doctor'", (doctor_user, doctor_pass), fetch=True)
         if not doctor:
             raise ValueError("Autorización del doctor fallida")
         total = cantidad * precio_unitario
