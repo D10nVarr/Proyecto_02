@@ -2,6 +2,9 @@ import customtkinter as ctk
 from PIL import Image
 from tkinter import messagebox
 from tkcalendar import DateEntry
+from tkinter import ttk
+import random
+from datetime import date
 
 FONT_FAMILY = "Edwardian Script ITC"
 
@@ -11,6 +14,11 @@ MORADO_VIVO="#bd7efb"
 ROSADO="#FDC2FE"
 BOTON_USUARIO="#F0E8F8"
 MORADO_CLARO="#C67EE7"
+FONDO_CONTADOR = "#A9EAFE"
+FONDO_CONTADOR_CLARO = "#D5F5E3"
+GRIS_CLARO_CONTADOR = "#D1E0E8"
+CAFE_PROVEEDOR = "#774d29"
+CAFE_CLARO = "#9a6f49"
 
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
@@ -20,7 +28,7 @@ app.update()
 app.state('zoomed')
 app.title("Inicio de Sesión")
 
-#opciones del menu
+
 def agregar_paciente():
     sub = ctk.CTkToplevel(app)
     sub.title("Agregar Paciente")
@@ -147,7 +155,7 @@ def buscar_paciente():
     sub.grid_columnconfigure(1, weight=1)
     sub.grid_rowconfigure(0, weight=1)
 
-    # Panel lateral
+
     side_panel = ctk.CTkFrame(master=sub, corner_radius=0, fg_color=MORADO_VIVO, width=300)
     side_panel.grid(row=0, column=0, sticky="nsew")
 
@@ -166,7 +174,6 @@ def buscar_paciente():
         ctk.CTkLabel(master=side_panel, text="[Dra. Angie Ajquill\nGinecología y Obstetricia]", font=ctk.CTkFont(size=20, weight="bold"),text_color="white",justify="center").place(relx=0.5, rely=0.5, anchor="center")
 
 
-    # Contenido principal
     main_content = ctk.CTkFrame(master=sub, fg_color="white", corner_radius=0)
     main_content.grid(row=0, column=1, sticky="nsew")
     main_content.grid_columnconfigure(0, weight=0)##
@@ -176,14 +183,14 @@ def buscar_paciente():
                  width=300,
                  height=60).grid(row=0, column=0, pady=(20, 40), padx=40, sticky="w")
 
-    # Botón Cerrar
+
     ctk.CTkButton(master=main_content,text="Cerrar ventana",command=sub.destroy,fg_color=MAGENTA,text_color="white",hover_color=MORADO_CLARO,
                   font=ctk.CTkFont(size=22, weight="bold"),
                   corner_radius=20,
                   width=220,
                   height=70).grid(row=0, column=1, sticky="e", padx=40, pady=(20, 40))
 
-    # Formulario
+
     form_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
     form_frame.grid(row=1, column=0, columnspan=2, pady=(10, 50))
     form_frame.grid_columnconfigure(0, weight=1)
@@ -256,7 +263,7 @@ def crear_ventana_ficha_medica(dpi_paciente, nombre_paciente, tel_paciente,proce
                  font=ctk.CTkFont(size=30, weight="bold"),
                  text_color=MAGENTA).place(relx=0.5, rely=0.5, anchor="center")
 
-    # Logo
+
     try:
         logo_path = "Logo.png"
         logo_pil_image = Image.open(logo_path)
@@ -339,13 +346,13 @@ def crear_ventana_ficha_medica(dpi_paciente, nombre_paciente, tel_paciente,proce
                                            font=ctk.CTkFont(size=16))
     entries['antecedentes'].grid(row=2, column=1, columnspan=2, padx=5, pady=8, sticky="ew")
 
-    # -------- Fila 4: Datos--------
+
     ctk.CTkFrame(master=form_frame, fg_color=MORADO_VIVO, corner_radius=20, height=50).grid(
         row=3, column=0, padx=5, pady=8, sticky="ew")
     ctk.CTkLabel(master=form_frame, text="Datos:", font=ctk.CTkFont(size=16, weight="bold"),
                  text_color="black", anchor="w", fg_color=MORADO_VIVO, bg_color=MORADO_VIVO).grid(row=3, column=0, padx=20, pady=8, sticky="w")
 
-    # ----- Textbox de consulta -----
+
     ctk.CTkLabel(master=main_content, text="Ingrese los datos de la consulta:",
                  font=ctk.CTkFont(size=20, weight="bold"), text_color=MAGENTA
                  ).grid(row=2, column=0, padx=60, pady=(10, 5), sticky="w")
@@ -362,7 +369,7 @@ def crear_ventana_ficha_medica(dpi_paciente, nombre_paciente, tel_paciente,proce
     if antecedentes: entries['antecedentes'].insert(0, antecedentes)
     if datos_consulta: consulta_textbox.insert("0.0", datos_consulta)
 
-    # ----- Botón Guardar(con diccionario mientras se carga DB) -----
+
     def guardar_ficha():
         procedencia = entries['procedencia'].get()
         ocupacion = entries['ocupacion'].get()
@@ -395,7 +402,6 @@ def buscar_ficha():
     sub.grid_columnconfigure(1, weight=1)
     sub.grid_rowconfigure(0, weight=1)
 
-    # Panel lateral
     side_panel = ctk.CTkFrame(master=sub, corner_radius=0, fg_color=MORADO_VIVO, width=300)
     side_panel.grid(row=0, column=0, sticky="nsew")
 
@@ -414,7 +420,6 @@ def buscar_ficha():
         ctk.CTkLabel(master=side_panel, text="[Dra. Angie Ajquill\nGinecología y Obstetricia]", font=ctk.CTkFont(size=20, weight="bold"),text_color="white",justify="center").place(relx=0.5, rely=0.5, anchor="center")
 
 
-    # Contenido principal
     main_content = ctk.CTkFrame(master=sub, fg_color="white", corner_radius=0)
     main_content.grid(row=0, column=1, sticky="nsew")
     main_content.grid_columnconfigure(0, weight=0)
@@ -424,14 +429,14 @@ def buscar_ficha():
                  width=300,
                  height=60).grid(row=0, column=0, pady=(20, 40), padx=40, sticky="w")
 
-    # Botón Cerrar
+
     ctk.CTkButton(master=main_content,text="Cerrar ventana",command=sub.destroy,fg_color=MAGENTA,text_color="white",hover_color=MORADO_CLARO,
                   font=ctk.CTkFont(size=22, weight="bold"),
                   corner_radius=20,
                   width=220,
                   height=70).grid(row=0, column=1, sticky="e", padx=40, pady=(20, 40))
 
-    # Formulario
+
     form_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
     form_frame.grid(row=1, column=0, columnspan=2, pady=(10, 50))
     form_frame.grid_columnconfigure(0, weight=1)
@@ -630,7 +635,7 @@ def agendar_cita():
                      font=ctk.CTkFont(size=20, weight="bold"), text_color="white", justify="center"
                      ).place(relx=0.5, rely=0.6, anchor="center")
 
-    # Contenido principal
+
     main_content = ctk.CTkFrame(master=sub, fg_color="white", corner_radius=0)
     main_content.grid(row=0, column=1, sticky="nsew")
 
@@ -643,7 +648,7 @@ def agendar_cita():
     main_content.grid_rowconfigure(2, weight=1)
     main_content.grid_rowconfigure(3, weight=0)
 
-    # Título y botón cerrar
+
     ctk.CTkLabel(master=main_content, text="Agendar Cita",
                  fg_color=MORADO_VIVO, text_color=MAGENTA,
                  font=ctk.CTkFont(size=30, weight="bold"),
@@ -656,7 +661,7 @@ def agendar_cita():
                   corner_radius=20, width=220, height=60
                   ).grid(row=0, column=2, sticky="e", padx=(0, 40), pady=(20, 20))
 
-    # Formulario
+
     form_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
     form_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=(60, 0), pady=(100, 100))
     form_frame.grid_columnconfigure(0, weight=1)
@@ -681,7 +686,7 @@ def agendar_cita():
                                    text_color="black", font=ctk.CTkFont(size=20), border_width=0)
     entry_direccion.grid(row=1, column=2, sticky="w", padx=(0, 80), pady=20)
 
-    # Calendario para seleccionar fecha
+
     ctk.CTkLabel(master=form_frame, text="Fecha de la cita:",
                  text_color=MAGENTA, font=ctk.CTkFont(size=20, weight="bold")
                  ).grid(row=2, column=1, sticky="e", padx=(0, 20), pady=20)
@@ -690,7 +695,6 @@ def agendar_cita():
                            font=("Arial", 18))
     date_entry.grid(row=2, column=2, sticky="w", padx=(0, 80), pady=20)
 
-    # ComboBox para seleccionar hora
     ctk.CTkLabel(master=form_frame, text="Hora:",
                  text_color=MAGENTA, font=ctk.CTkFont(size=20, weight="bold")
                  ).grid(row=3, column=1, sticky="e", padx=(0, 20), pady=20)
@@ -702,7 +706,7 @@ def agendar_cita():
     hora_combo.set("Seleccione hora")
     hora_combo.grid(row=3, column=2, sticky="w", padx=(0, 80), pady=20)
 
-    # Imagen decorativa
+
     try:
         img_path = "cita.jpg"
         cita_pil = Image.open(img_path)
@@ -713,7 +717,7 @@ def agendar_cita():
         ctk.CTkLabel(master=main_content, text="[Imagen cita]", text_color="gray",
                      font=ctk.CTkFont(size=20, slant="italic")).grid(row=1, column=2, padx=40, pady=10, sticky="n")
 
-    # Función para guardar cita
+
     def guardar_cita():
         nombre = entry_nombre.get()
         direccion = entry_direccion.get()
@@ -732,7 +736,7 @@ def agendar_cita():
         messagebox.showinfo("Éxito", f"Cita agendada para {nombre}\nFecha: {fecha} - Hora: {hora}")
         sub.destroy()
 
-    # Botón Guardar
+
     ctk.CTkButton(master=main_content, text="Guardar Cita",
                   command=guardar_cita, fg_color=ROSADO, text_color=MAGENTA,
                   hover_color="#F0B4FB", font=ctk.CTkFont(size=24, weight="bold"),
@@ -799,7 +803,6 @@ def ver_citas():
                   hover_color=MORADO_CLARO, font=ctk.CTkFont(size=20, weight="bold"),
                   corner_radius=20, width=220, height=60
                   ).grid(row=0, column=2, sticky="e", padx=(0, 40), pady=(20, 20))
-    #apartado con base de datos
 
 
 def cancelar_cita():
@@ -817,7 +820,7 @@ def cancelar_cita():
     sub.grid_columnconfigure(1, weight=1)
     sub.grid_rowconfigure(0, weight=1)
 
-    # Panel lateral
+
     side_panel = ctk.CTkFrame(master=sub, corner_radius=0, fg_color=MORADO_VIVO, width=300)
     side_panel.grid(row=0, column=0, sticky="nsew")
 
@@ -836,7 +839,7 @@ def cancelar_cita():
         ctk.CTkLabel(master=side_panel, text="[Dra. Angie Ajquill\nGinecología y Obstetricia]", font=ctk.CTkFont(size=20, weight="bold"),text_color="white",justify="center").place(relx=0.5, rely=0.5, anchor="center")
 
 
-    # Contenido principal
+
     main_content = ctk.CTkFrame(master=sub, fg_color="white", corner_radius=0)
     main_content.grid(row=0, column=1, sticky="nsew")
     main_content.grid_columnconfigure(0, weight=0)
@@ -846,14 +849,14 @@ def cancelar_cita():
                  width=300,
                  height=60).grid(row=0, column=0, pady=(20, 40), padx=40, sticky="w")
 
-    # Botón Cerrar
+
     ctk.CTkButton(master=main_content,text="Cerrar ventana",command=sub.destroy,fg_color=MAGENTA,text_color="white",hover_color=MORADO_CLARO,
                   font=ctk.CTkFont(size=22, weight="bold"),
                   corner_radius=20,
                   width=220,
                   height=70).grid(row=0, column=1, sticky="e", padx=40, pady=(20, 40))
 
-    # Formulario
+
     form_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
     form_frame.grid(row=1, column=0, columnspan=2, pady=(10, 50))
     form_frame.grid_columnconfigure(0, weight=1)
@@ -893,6 +896,81 @@ def cancelar_cita():
 
     ctk.CTkButton(master=main_content,text="Buscar",command=buscar,fg_color=ROSADO,text_color=MAGENTA,hover_color="#F0B4FB",font=ctk.CTkFont(size=26, weight="bold"),corner_radius=30,width=250,height=80).grid(row=2, column=0, columnspan=2, pady=40)
 
+
+
+#==========================================================================================
+def crear_ventana_tabla(title, headers, data):
+    sub = ctk.CTkToplevel(app)
+    sub.title(title)
+    sub.geometry("1000x600")
+    sub.transient(app)
+    sub.grab_set()
+    sub.lift()
+    sub.focus_force()
+    sub.configure(fg_color="white")
+
+    ctk.CTkLabel(sub, text=title,
+                 fg_color=MORADO_VIVO, text_color="white",
+                 font=ctk.CTkFont(size=24, weight="bold"),
+                 corner_radius=15, height=40).pack(pady=20, padx=20, fill="x")
+
+    table_frame = ctk.CTkFrame(sub, fg_color="white")
+    table_frame.pack(pady=10, padx=20, fill="both", expand=True)
+
+
+    style = ttk.Style()
+    style.theme_use("default")
+    style.configure("Treeview",
+                    background="#F0F0F0",
+                    foreground="black",
+                    rowheight=25,
+                    fieldbackground="#F0F0F0",
+                    font=('Arial', 12))
+    style.map('Treeview', background=[('selected', MORADO_VIVO)])
+    style.configure("Treeview.Heading", font=('Arial', 12, 'bold'), background=MAGENTA, foreground="white")
+
+    tree = ttk.Treeview(table_frame, columns=headers, show="headings")
+
+    for col in headers:
+        tree.heading(col, text=col)
+        tree.column(col, anchor="center", width=int(1000 / len(headers)))
+
+
+    for row in data:
+        tree.insert("", "end", values=row)
+
+
+    scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side="right", fill="y")
+    tree.pack(side="left", fill="both", expand=True)
+
+    ctk.CTkButton(sub, text="Cerrar", command=sub.destroy,
+                  fg_color=MAGENTA, hover_color=MORADO_CLARO,
+                  font=ctk.CTkFont(size=18, weight="bold"), corner_radius=15,
+                  width=150, height=40).pack(pady=(10, 20))
+
+def ver_inventario():
+    headers = ["Medicamento", "Lote", "Cantidad", "Precio Venta (Q)"]
+    data = [
+        ["Ampicilina 500mg", "L1023", 150, 45.00],
+        ["Metformina 850mg", "L2023", 300, 25.50],
+        ["Ácido Fólico", "L3023", 500, 10.00],
+        ["Paracetamol 500mg", "L4023", 90, 15.75]
+    ]
+    crear_ventana_tabla("Inventario Actual de Medicamentos", headers, data)
+
+
+def ver_medicamentos_comprados():
+    headers = ["Medicamento", "Proveedor", "Cantidad", "Costo Unitario (Q)", "Fecha Compra"]
+    data = [
+        ["Ampicilina 500mg", "Droguería A", 200, 35.00, "2024-05-10"],
+        ["Metformina 850mg", "Farmacéutica B", 400, 20.00, "2024-04-20"],
+        ["Ácido Fólico", "Droguería A", 600, 8.00, "2024-06-01"]
+    ]
+    crear_ventana_tabla("Registro de Compras de Medicamentos", headers, data)
+
+
 #funciones principales----------------------------------------------------------------------
 #===========================================================================================
 
@@ -904,24 +982,23 @@ def crear_interfaz_principal():
     app.state('zoomed')
     app.configure(fg_color="white")
 
-    # Configuración de grid principal
+
     app.grid_rowconfigure(0, weight=1)
     app.grid_columnconfigure(0, weight=0)
     app.grid_columnconfigure(1, weight=2)
     app.grid_columnconfigure(2, weight=1)
 
-    # --- PANEL IZQUIERDO ---
+
     side_panel = ctk.CTkFrame(master=app, corner_radius=0, fg_color=MORADO_VIVO, width=300)
     side_panel.grid(row=0, column=0, sticky="nsew")
 
-    # Header del panel lateral
     header_frame = ctk.CTkFrame(master=side_panel, fg_color=BOTON_USUARIO, corner_radius=20, width=200, height=60)
     header_frame.place(x=30, y=25)
     ctk.CTkLabel(master=header_frame, text="Dr. Maggie",
                  font=ctk.CTkFont(size=30, weight="bold"),
                  text_color=MAGENTA).place(relx=0.5, rely=0.5, anchor="center")
 
-    # Logo lateral
+
     try:
         logo_path = "Logo.png"
         logo_pil_image = Image.open(logo_path)
@@ -933,8 +1010,8 @@ def crear_interfaz_principal():
                      font=ctk.CTkFont(size=20, weight="bold"),
                      text_color="white", justify="center").place(relx=0.5, rely=0.6, anchor="center")
 
-    # --- CONTENIDO PRINCIPAL ---
-    main_content = ctk.CTkFrame(master=app, fg_color="white", corner_radius=0)
+
+    main_content = ctk.CTkFrame(master=app, fg_color=ROSADO, corner_radius=0)
     main_content.grid(row=0, column=1, columnspan=2, sticky="nsew")
 
     main_content.grid_columnconfigure(0, weight=1)
@@ -944,14 +1021,14 @@ def crear_interfaz_principal():
     main_content.grid_rowconfigure(1, weight=1)
     main_content.grid_rowconfigure(2, weight=0)
 
-    # --- TÍTULO ---
+
     ctk.CTkLabel(master=main_content, text="Opciones clínica",
                  fg_color=MORADO_VIVO, text_color=MAGENTA,
                  font=ctk.CTkFont(size=30, weight="bold"),
                  corner_radius=40, width=320, height=60
                  ).grid(row=0, column=0, columnspan=2, pady=(20, 20), padx=40, sticky="w")
 
-    # --- BOTÓN CERRAR SESIÓN ---
+
     def cerrar_sesion():
         for widget in app.winfo_children():
             widget.destroy()
@@ -966,14 +1043,13 @@ def crear_interfaz_principal():
                   corner_radius=20, width=220, height=60
                   ).grid(row=0, column=2, sticky="e", padx=(0, 40), pady=(20, 20))
 
-    # --- CONTENEDOR DE BOTONES ---
+
     botones_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
     botones_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=(60, 0), pady=(60, 60))
     botones_frame.grid_columnconfigure(0, weight=1)
     botones_frame.grid_columnconfigure(1, weight=1)
     botones_frame.grid_columnconfigure(2, weight=1)
 
-    # --- BOTONES DEL MENÚ ---
     botones = [
         ("Agregar paciente", agregar_paciente),
         ("Crear ficha médica", buscar_paciente),
@@ -1001,7 +1077,7 @@ def crear_interfaz_principal():
                       corner_radius=30, width=260, height=70
                       ).grid(row=4, column=i, padx=30, pady=(100, 0))
 
-    # --- IMAGEN PRINCIPAL ---
+
     try:
         img_path = "consulta.png"
         img_pil = Image.open(img_path)
@@ -1012,28 +1088,212 @@ def crear_interfaz_principal():
                      text_color="gray", font=ctk.CTkFont(size=20, slant="italic")
                      ).grid(row=1, column=2, padx=40, pady=(80, 0), sticky="n")
 
+def menu_contador():
+    for widget in app.winfo_children():
+        widget.destroy()
 
-# ------------------------------------------------------
-def abrir_nueva_pantalla(titulo):
-    print(f"Abriendo ventana: {titulo}...")
-    sub = ctk.CTkToplevel(app)
-    sub.title(titulo)
-    sub.geometry("800x600+200+100")
-    sub.lift()
-    sub.focus_force()
-    sub.grab_set()
+    app.title("Contador - Inventario y Compras")
+    app.state('zoomed')
+    app.configure(fg_color="white")
 
-    ctk.CTkLabel(
-        sub,
-        text=f"{titulo}",
-        font=ctk.CTkFont(size=30, weight="bold")
-    ).pack(pady=40)
+    app.grid_columnconfigure(0, weight=0)
+    app.grid_columnconfigure(1, weight=1)
+    app.grid_rowconfigure(0, weight=1)
 
-    ctk.CTkButton(
-        sub,text="Cerrar ventana",command=sub.destroy,fg_color=MAGENTA,text_color="white",width=250,height=60,font=ctk.CTkFont(size=20, weight="bold"),
-        corner_radius=15
-    ).pack(pady=30)
 
+    side_panel = ctk.CTkFrame(master=app, corner_radius=0, fg_color=FONDO_CONTADOR, width=300)
+    side_panel.grid(row=0, column=0, sticky="nsew")
+
+    title_side = ctk.CTkFrame(master=side_panel, fg_color=ROSADO, corner_radius=20, width=200, height=60)
+    title_side.place(x=30, y=25)
+    ctk.CTkLabel(master=title_side, text="Contador",
+                 font=ctk.CTkFont(size=30, weight="bold"),
+                 text_color=MAGENTA).place(relx=0.5, rely=0.5, anchor="center")
+
+    try:
+        logo_path = "Logo.png"
+        logo_pil_image = Image.open(logo_path)
+        logo_ctk_image = ctk.CTkImage(light_image=logo_pil_image, dark_image=logo_pil_image, size=(250, 250))
+        ctk.CTkLabel(master=side_panel, image=logo_ctk_image, text="").place(relx=0.5, rely=0.55, anchor="center")
+    except Exception:
+        ctk.CTkLabel(master=side_panel, text="[Dra. Angie Ajquill\nGinecología y Obstetricia]",
+                     font=ctk.CTkFont(size=20, weight="bold"),
+                     text_color="gray", justify="center").place(relx=0.5, rely=0.55, anchor="center")
+
+
+    main_content = ctk.CTkFrame(master=app, fg_color="white", corner_radius=0)
+    main_content.grid(row=0, column=1, sticky="nsew")
+    main_content.grid_rowconfigure((0, 1), weight=1)
+    main_content.grid_columnconfigure((0, 1), weight=1)
+
+    title_main = ctk.CTkLabel(master=main_content, text="Módulo Financiero",
+                              fg_color=FONDO_CONTADOR_CLARO,
+                              text_color=MAGENTA,
+                              font=ctk.CTkFont(size=30, weight="bold"),
+                              corner_radius=20, width=250, height=60
+                              )
+    title_main.place(x=20, y=20)
+
+
+    btn_inventario = ctk.CTkButton(master=main_content, text="Ver inventario",
+                                   command=ver_inventario,
+                                   fg_color=GRIS_CLARO_CONTADOR,
+                                   text_color="black",
+                                   hover_color="#BFC8CE",
+                                   font=ctk.CTkFont(size=22, weight="bold"),
+                                   corner_radius=40, width=250, height=80)
+    btn_inventario.grid(row=0, column=0, padx=50, pady=(150, 0), sticky="n")
+
+    try:
+        inventario_path = "image_cac7fb.png"
+        inventario_pil_image = Image.open(inventario_path)
+        inventario_ctk_image = ctk.CTkImage(light_image=inventario_pil_image, dark_image=inventario_pil_image,
+                                            size=(250, 250))
+        ctk.CTkLabel(master=main_content, image=inventario_ctk_image, text="").grid(row=1, column=0, padx=50,
+                                                                                    pady=(10, 50), sticky="n")
+    except Exception:
+        ctk.CTkLabel(master=main_content, text="[Imagen Inventario]", text_color="gray",
+                     font=ctk.CTkFont(size=20, slant="italic")).grid(row=1, column=0, padx=50, pady=(10, 50),
+                                                                     sticky="n")
+
+
+    btn_compras = ctk.CTkButton(master=main_content, text="Ver medicamentos comprados",
+                                command=ver_medicamentos_comprados,
+                                fg_color=GRIS_CLARO_CONTADOR,
+                                text_color="black",
+                                hover_color="#BFC8CE",
+                                font=ctk.CTkFont(size=22, weight="bold"),
+                                corner_radius=40, width=350, height=80)
+    btn_compras.grid(row=0, column=1, padx=50, pady=(150, 0), sticky="n")
+
+
+    try:
+        compras_path = "image_cb4e88.png"
+        compras_pil_image = Image.open(compras_path)
+        compras_ctk_image = ctk.CTkImage(light_image=compras_pil_image, dark_image=compras_pil_image, size=(250, 250))
+        ctk.CTkLabel(master=main_content, image=compras_ctk_image, text="").grid(row=1, column=1, padx=50,
+                                                                                 pady=(10, 50), sticky="n")
+    except Exception:
+        ctk.CTkLabel(master=main_content, text="[Imagen Compras]", text_color="gray",
+                     font=ctk.CTkFont(size=20, slant="italic")).grid(row=1, column=1, padx=50, pady=(10, 50),
+                                                                     sticky="n")
+
+    def cerrar_sesion():
+        for widget in app.winfo_children():
+            widget.destroy()
+        app.update_idletasks()
+        interfaz_login()
+
+
+    ctk.CTkButton(master=main_content, text="Cerrar Sesión",
+                  command=cerrar_sesion,
+                  fg_color=MAGENTA, text_color="white",
+                  hover_color=MORADO_CLARO, font=ctk.CTkFont(size=20, weight="bold"),
+                  corner_radius=20, width=150, height=50
+                  ).place(relx=1.0, rely=1.0, anchor="se", x=-20, y=-20)
+
+
+def menu_proveedor():
+    for widget in app.winfo_children():
+        widget.destroy()
+
+    app.title("Proveedor - Solicitar medicamento")
+    app.state('zoomed')
+    app.configure(fg_color="white")
+
+    app.grid_columnconfigure(0, weight=0)
+    app.grid_columnconfigure(1, weight=1)
+    app.grid_rowconfigure(0, weight=1)
+
+    side_panel = ctk.CTkFrame(master=app, corner_radius=0, fg_color=CAFE_PROVEEDOR, width=300)
+    side_panel.grid(row=0, column=0, sticky="nsew")
+
+    title_side = ctk.CTkFrame(master=side_panel, fg_color="white", corner_radius=20, width=200, height=60)
+    title_side.place(x=30, y=25)
+    ctk.CTkLabel(master=title_side, text="Proveedor",
+                 font=ctk.CTkFont(size=30, weight="bold"),
+                 text_color=MAGENTA).place(relx=0.5, rely=0.5, anchor="center")
+
+    try:
+        logo_path = "Logo.png"
+        logo_pil_image = Image.open(logo_path)
+        logo_ctk_image = ctk.CTkImage(light_image=logo_pil_image, dark_image=logo_pil_image, size=(250, 250))
+        ctk.CTkLabel(master=side_panel, image=logo_ctk_image, text="").place(relx=0.5, rely=0.55, anchor="center")
+    except Exception:
+        ctk.CTkLabel(master=side_panel, text="[Dra. Angie Ajquill\nGinecología y Obstetricia]",
+                     font=ctk.CTkFont(size=20, weight="bold"),
+                     text_color="gray", justify="center").place(relx=0.5, rely=0.55, anchor="center")
+
+
+    main_content = ctk.CTkFrame(master=app, fg_color="white", corner_radius=0)
+    main_content.grid(row=0, column=1, sticky="nsew")
+    main_content.grid_rowconfigure((0, 1), weight=1)
+    main_content.grid_columnconfigure((0, 1), weight=1)
+
+    title_main = ctk.CTkLabel(master=main_content, text="Solicitar medicamento",
+                              fg_color=CAFE_CLARO,
+                              font=ctk.CTkFont(size=30, weight="bold"),
+                              corner_radius=20, width=250, height=60
+                              )
+    title_main.place(x=20, y=20)
+
+
+    btn_inventario = ctk.CTkButton(master=main_content, text="Ingrese nombre: ",
+                                   command=ver_inventario,
+                                   fg_color=GRIS_CLARO_CONTADOR,
+                                   text_color="black",
+                                   hover_color="#BFC8CE",
+                                   font=ctk.CTkFont(size=22, weight="bold"),
+                                   corner_radius=40, width=250, height=80)
+    btn_inventario.grid(row=0, column=0, padx=50, pady=(150, 0), sticky="n")
+
+
+    try:
+        inventario_path = "image_cac7fb.png"
+        inventario_pil_image = Image.open(inventario_path)
+        inventario_ctk_image = ctk.CTkImage(light_image=inventario_pil_image, dark_image=inventario_pil_image,
+                                            size=(250, 250))
+        ctk.CTkLabel(master=main_content, image=inventario_ctk_image, text="").grid(row=1, column=0, padx=50,
+                                                                                    pady=(10, 50), sticky="n")
+    except Exception:
+        ctk.CTkLabel(master=main_content, text="[Imagen Inventario]", text_color="gray",
+                     font=ctk.CTkFont(size=20, slant="italic")).grid(row=1, column=0, padx=50, pady=(10, 50),
+                                                                     sticky="n")
+
+
+    btn_compras = ctk.CTkButton(master=main_content, text="Cantidad: ",
+                                command=ver_medicamentos_comprados,
+                                fg_color=CAFE_CLARO,
+                                text_color="black",
+                                hover_color="#BFC8CE",
+                                font=ctk.CTkFont(size=22, weight="bold"),
+                                corner_radius=40, width=350, height=80)
+    btn_compras.grid(row=0, column=1, padx=50, pady=(150, 0), sticky="n")
+
+
+    try:
+        compras_path = "image_cb4e88.png"
+        compras_pil_image = Image.open(compras_path)
+        compras_ctk_image = ctk.CTkImage(light_image=compras_pil_image, dark_image=compras_pil_image, size=(250, 250))
+        ctk.CTkLabel(master=main_content, image=compras_ctk_image, text="").grid(row=1, column=1, padx=50,
+                                                                                 pady=(10, 50), sticky="n")
+    except Exception:
+        ctk.CTkLabel(master=main_content, text="[Imagen Compras]", text_color="gray",
+                     font=ctk.CTkFont(size=20, slant="italic")).grid(row=1, column=1, padx=50, pady=(10, 50),
+                                                                     sticky="n")
+
+    def cerrar_sesion():
+        for widget in app.winfo_children():
+            widget.destroy()
+        app.update_idletasks()
+        interfaz_login()
+
+    ctk.CTkButton(master=main_content, text="Cerrar Sesión",
+                  command=cerrar_sesion,
+                  fg_color=MAGENTA, text_color="white",
+                  hover_color=MORADO_CLARO, font=ctk.CTkFont(size=20, weight="bold"),
+                  corner_radius=20, width=150, height=50
+                  ).place(relx=1.0, rely=1.0, anchor="se", x=-20, y=-20)
 #-----------------------------------------------------------------
 def interfaz_login():
     app.state('zoomed')  # mantiene pantalla completa
@@ -1046,7 +1306,7 @@ def interfaz_login():
     app.grid_columnconfigure(1, weight=1)
     app.grid_rowconfigure(0, weight=1)
 
-    #IZQUIERDO (Formulario) ---
+
     left_frame = ctk.CTkFrame(master=app, corner_radius=0, fg_color=LILA)
     left_frame.grid(row=0, column=0, sticky="nswe", padx=40, pady=20)
 
@@ -1122,14 +1382,19 @@ def interfaz_login():
         usuario = user_entry.get()
         contra = pass_entry.get()
 
-        if usuario == "1" and contra == "1":
+        if usuario == "contador" and contra == "1234":
+            messagebox.showinfo("Éxito", "Bienvenido Contador")
+            menu_contador()
+        elif usuario == "proveedor" and contra == "1234":
+            messagebox.showinfo("Éxito", "Bienvenido Proveedor")
+            menu_proveedor()
+        elif usuario == "doc" and contra == "1234":
+            messagebox.showinfo("Éxito", "Bienvenido Administrador/Doctor")
             crear_interfaz_principal()
-        elif usuario != "1":
-            messagebox.showerror("Error", "Usuario incorrecto.")
-        elif contra != "1":
-            messagebox.showerror("Error", "Contraseña incorrecta.")
+        elif not usuario or not contra:
+            messagebox.showwarning("Advertencia", "Por favor, ingrese usuario y contraseña.")
         else:
-            messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
+            messagebox.showerror("Error", "Credenciales incorrectas.")
 
     login_button = ctk.CTkButton(master=left_frame, text="Iniciar Sesión",
                                  command=intentar_login, width=450, height=60,
