@@ -1313,6 +1313,7 @@ def crear_ventana_tabla(title, headers, data):
 
     tree = ttk.Treeview(table_frame, columns=headers, show="headings")
 
+
     for col in headers:
         tree.heading(col, text=col)
         tree.column(col, anchor="center", width=int(1000 / len(headers)))
