@@ -3,7 +3,6 @@ from PIL import Image
 from tkinter import messagebox
 from tkcalendar import DateEntry
 from tkinter import ttk
-import sqlite3
 
 try:
     from base_de_datos.DataBase import BaseDatos, Usuario, Doctor, Contador, Paciente, Proveedor
@@ -857,13 +856,8 @@ def vender_medicamento():
     main_content.grid_columnconfigure(0, weight=1)
     main_content.grid_columnconfigure(1, weight=2)
     main_content.grid_columnconfigure(2, weight=1)
-    main_content.grid_rowconfigure(0, weight=0)
-    main_content.grid_rowconfigure(1, weight=0)
-    main_content.grid_rowconfigure(2, weight=0)
-    main_content.grid_rowconfigure(3, weight=0)
-    main_content.grid_rowconfigure(4, weight=0)
 
-    # TÍTULO Y BOTÓN CERRAR ------------------------------------------------
+    # TÍTULO ---------------------------------------------------------------
     ctk.CTkLabel(master=main_content, text="Vender medicamento",
                  fg_color=MORADO_VIVO, text_color=MAGENTA,
                  font=ctk.CTkFont(size=30, weight="bold"),
@@ -882,66 +876,85 @@ def vender_medicamento():
     form_frame.grid_columnconfigure(0, weight=1)
     form_frame.grid_columnconfigure(1, weight=3)
 
-    CAMPOS = ["Medicamento:", "Cantidad:", "Precio:"]
-    entries = {}
-
-    for i, label_text in enumerate(CAMPOS):
-        ctk.CTkLabel(master=form_frame, text=label_text,
-                     text_color=MAGENTA, font=ctk.CTkFont(size=20, weight="bold"),
-                     ).grid(row=i, column=1, sticky="e", padx=(0, 20), pady=20)
-
-        entry = ctk.CTkEntry(master=form_frame,
-                             placeholder_text=f"Ingrese {label_text.replace(':', '')}",
-                             width=600, height=60,
-                             fg_color="white", text_color="black",
-                             font=ctk.CTkFont(size=20), border_width=0
-                             )
-        entry.grid(row=i, column=2, sticky="w", padx=(0, 80), pady=20)
-        entries[label_text] = entry
-
-    # IMAGEN ---------------------------------------------------------------
+    # Obtener medicamentos disponibles desde la BD
     try:
-        img_path = "medicina.png"
-        paciente_pil = Image.open(img_path)
-        paciente_img = ctk.CTkImage(light_image=paciente_pil, dark_image=paciente_pil, size=(300, 300))
-        ctk.CTkLabel(master=main_content, image=paciente_img, text="").grid(
-            row=1, column=2, padx=40, pady=(100, 10), sticky="n")
+        medicamentos = db.ejecutar("SELECT nombre FROM productos", fetch=True)
+        lista_meds = [m['nombre'] for m in medicamentos] if medicamentos else []
     except Exception as e:
-        print(f"No se pudo cargar imagen del medicamento: {e}")
-        ctk.CTkLabel(master=main_content, text="[Imagen medicina]", text_color="gray",
-                     font=ctk.CTkFont(size=20, slant="italic")).grid(row=1, column=2, padx=40, pady=10, sticky="n")
+        lista_meds = []
+        print(f"Error al cargar medicamentos: {e}")
+
+    # Campo de Medicamento (ComboBox)
+    ctk.CTkLabel(master=form_frame, text="Medicamento:",
+                 text_color=MAGENTA, font=ctk.CTkFont(size=20, weight="bold")
+                 ).grid(row=0, column=1, sticky="e", padx=(0, 20), pady=20)
+
+    combo_meds = ctk.CTkComboBox(master=form_frame, values=lista_meds, width=600, height=60,
+                                 font=ctk.CTkFont(size=20), state="readonly")
+    combo_meds.grid(row=0, column=2, sticky="w", padx=(0, 80), pady=20)
+
+    # Cantidad
+    ctk.CTkLabel(master=form_frame, text="Cantidad:",
+                 text_color=MAGENTA, font=ctk.CTkFont(size=20, weight="bold")
+                 ).grid(row=1, column=1, sticky="e", padx=(0, 20), pady=20)
+    entry_cantidad = ctk.CTkEntry(master=form_frame, placeholder_text="Ingrese cantidad",
+                                  width=600, height=60, fg_color="white", text_color="black",
+                                  font=ctk.CTkFont(size=20))
+    entry_cantidad.grid(row=1, column=2, sticky="w", padx=(0, 80), pady=20)
+
+    # Precio
+    ctk.CTkLabel(master=form_frame, text="Precio:",
+                 text_color=MAGENTA, font=ctk.CTkFont(size=20, weight="bold")
+                 ).grid(row=2, column=1, sticky="e", padx=(0, 20), pady=20)
+    entry_precio = ctk.CTkEntry(master=form_frame, placeholder_text="Ingrese precio unitario",
+                                width=600, height=60, fg_color="white", text_color="black",
+                                font=ctk.CTkFont(size=20))
+    entry_precio.grid(row=2, column=2, sticky="w", padx=(0, 80), pady=20)
 
     # GUARDAR / VENDER -----------------------------------------------------
     def guardar_venta():
-        nombre = entries["Medicamento:"].get()
-        cant = entries["Cantidad:"].get()
-        precio_ingresado = entries["Precio:"].get()
+        nombre = combo_meds.get().strip()
+        cant = entry_cantidad.get().strip()
+        precio_ingresado = entry_precio.get().strip()
 
-        if not nombre or not cant:
-            messagebox.showwarning("Advertencia", "Medicamento y Cantidad son obligatorios.")
+        if not nombre:
+            messagebox.showwarning("Advertencia", "Debe seleccionar un medicamento.")
             return
 
+        # Validar cantidad
         try:
-            cantidad_int = int(cant)
-            if cantidad_int <= 0:
-                messagebox.showwarning("Advertencia", "La cantidad debe ser un valor positivo.")
-                return
+            cantidad_valor = float(cant)
+            if cantidad_valor <= 0 or not cantidad_valor.is_integer():
+                raise ValueError
+            cantidad_valor = int(cantidad_valor)
         except ValueError:
-            messagebox.showwarning("Advertencia", "La cantidad debe ser un número entero.")
+            messagebox.showwarning("Advertencia", "La cantidad debe ser un número entero positivo.")
+            return
+
+        # Validar precio
+        try:
+            precio_valor = float(precio_ingresado)
+            if precio_valor <= 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showwarning("Advertencia", "El precio debe ser un número positivo (puede tener decimales).")
             return
 
         try:
             resultado = Proveedor.vender_producto(
                 db=db,
                 nombre=nombre,
-                cantidad=cantidad_int,
+                cantidad=cantidad_valor,
                 doctor_user="docanles",
                 doctor_pass="1234",
                 proveedor_id=usuario_actual.id
             )
 
             messagebox.showinfo("Venta Realizada",
-                                f"Venta registrada:\nMedicamento: {resultado['producto']}\nCantidad: {resultado['cantidad']}\nPrecio unitario: Q{resultado['precio_unitario']:.2f}\nTotal: Q{resultado['total']:.2f}")
+                                f"Venta registrada:\nMedicamento: {resultado['producto']}\n"
+                                f"Cantidad: {resultado['cantidad']}\n"
+                                f"Precio unitario: Q{precio_valor:.2f}\n"
+                                f"Total: Q{resultado['total']:.2f}")
             sub.destroy()
 
         except ValueError as e:
@@ -1095,9 +1108,13 @@ def agendar_cita():
             messagebox.showerror("Error", f"Paciente con DPI {dpi} no encontrado. Debe registrarlo primero.")
             return
 
-        cita_existente = db.ejecutar("SELECT id FROM citas WHERE registrado_en=?", (registrado_en,), fetch=True)
+        cita_existente = db.ejecutar(
+            "SELECT id FROM citas WHERE fecha=? AND registrado_en=?",
+            (fecha, registrado_en),
+            fetch=True
+        )
         if cita_existente:
-            messagebox.showerror("Error", f"La fecha {fecha} a las {hora} ya está ocupada.")
+            messagebox.showerror("Error", f"Ya existe una cita el {fecha} a las {hora}.")
             return
 
         try:
@@ -1741,53 +1758,52 @@ def menu_proveedor():
         precio = precio_var.get().strip()
 
         if not nombre or not cantidad or not precio:
-            messagebox.showwarning("Advertencia", "Nombre, Cantidad (Stock) y Precio son obligatorios.")
+            messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
             return
 
+        # Validar cantidad positiva
         try:
-            # Validar y convertir la Cantidad a entero (Stock)
-            cantidad_int = int(cantidad)
-            if cantidad_int <= 0:
-                messagebox.showwarning("Advertencia", "La Cantidad (Stock) debe ser un valor positivo.")
+            cantidad_float = float(cantidad)
+            if cantidad_float <= 0 or not cantidad_float.is_integer():
+                messagebox.showwarning("Advertencia", "La cantidad debe ser un número entero positivo.")
                 return
+            cantidad_int = int(cantidad_float)
         except ValueError:
-            messagebox.showwarning("Advertencia",
-                                   "La Cantidad (Stock) tiene un formato incorrecto (debe ser un número entero).")
+            messagebox.showwarning("Advertencia", "La cantidad debe ser un número entero válido.")
             return
 
+        # Validar precio positivo (permite decimales)
         try:
             precio_float = float(precio)
             if precio_float <= 0:
-                messagebox.showwarning("Advertencia", "El Precio de Venta debe ser mayor que cero.")
+                messagebox.showwarning("Advertencia", "El precio debe ser un número positivo.")
                 return
         except ValueError:
-            messagebox.showwarning("Advertencia",
-                                   "El Precio de Venta tiene un formato incorrecto (debe ser un número decimal).")
+            messagebox.showwarning("Advertencia", "El precio debe ser un número válido.")
             return
 
         try:
             proveedor = Proveedor(nombre=usuario_actual.nombre, rol=usuario_actual.rol, db=db)
             proveedor.id = usuario_actual.id
-            resultado = proveedor.agregar_producto(
-                nombre=nombre,
-                precio=precio_float,
-                stock=cantidad_int
-            )
+            proveedor.agregar_producto(nombre=nombre, precio=precio_float, stock=cantidad_int)
+
             messagebox.showinfo("Registro Exitoso",
-                                f"Producto '{nombre}' registrado/actualizado en el inventario.\nStock Añadido: {cantidad_int}\nPrecio de Venta: Q{precio_float:.2f}")
+                                f"Producto '{nombre}' registrado/actualizado en el inventario.\n"
+                                f"Stock añadido: {cantidad_int}\n"
+                                f"Precio de venta: Q{precio_float:.2f}")
 
             nombre_var.set("")
             cantidad_var.set("")
             precio_var.set("")
-
         except Exception as e:
-            messagebox.showerror("Error de Registro", f"Ocurrió un error inesperado al registrar el producto: {e}")
+            messagebox.showerror("Error", f"Ocurrió un error al registrar el medicamento:\n{e}")
 
-
-    ctk.CTkButton(master=form_frame, text="Vender Medicamento",
+    # BOTÓN FINAL ----------------------------------------------------------
+    ctk.CTkButton(master=form_frame, text="Registrar Medicamento",
                   command=realizar_venta_proveedor,
                   fg_color=MAGENTA, text_color="white",
-                  hover_color=MORADO_CLARO, font=ctk.CTkFont(size=20, weight="bold"),
+                  hover_color=MORADO_CLARO,
+                  font=ctk.CTkFont(size=20, weight="bold"),
                   corner_radius=20, width=300, height=60
                   ).grid(row=3, column=0, columnspan=2, pady=50)
 
