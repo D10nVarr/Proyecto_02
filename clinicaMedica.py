@@ -155,7 +155,7 @@ def agregar_paciente():
 
     ctk.CTkButton(master=main_content, text="Guardar",
                   command=guardar_paciente, fg_color=ROSADO, text_color=MAGENTA,
-                  hover_color="#transparente", font=ctk.CTkFont(size=24, weight="bold"),
+                  hover_color="transparent", font=ctk.CTkFont(size=24, weight="bold"),
                   corner_radius=30, width=300, height=80
                   ).grid(row=2, column=0, columnspan=3, pady=(10, 40), sticky="n")
 
@@ -445,7 +445,205 @@ def crear_ventana_ficha_medica(dpi_paciente, nombre_paciente, tel_paciente, proc
                   corner_radius=30, width=300, height=70
                   ).grid(row=4, column=0, pady=(20, 10))
 
+#======================================================================
+def crear_ventana_ficha_medica_actualizar(dpi_paciente, nombre_paciente, tel_paciente, procedencia=None, ocupacion=None,
+                                          fecha_nac=None, antecedentes=None, datos_consulta=None):
 
+    ficha_id_a_actualizar = None
+    ultima_ficha = db.ejecutar(
+        "SELECT id, procedencia, ocupacion, fecha_nacimiento, antecedentes, datos FROM fichas WHERE paciente_id=? ORDER BY id DESC LIMIT 1",
+        (dpi_paciente,),
+        fetch=True
+    )
+    if ultima_ficha:
+        f = ultima_ficha[0]
+        ficha_id_a_actualizar = f['id']
+        procedencia = f['procedencia']
+        ocupacion = f['ocupacion']
+        fecha_nac = f['fecha_nacimiento']
+        antecedentes = f['antecedentes']
+        datos_consulta = f['datos']
+
+    sub = ctk.CTkToplevel(app)
+    sub.title("Crear Ficha Médica")
+    sub.state('zoomed')
+    sub.configure(fg_color="white")
+
+    sub.transient(app)
+    sub.grab_set()
+    sub.lift()
+    sub.focus_force()
+
+    sub.grid_rowconfigure(0, weight=1)
+    sub.grid_columnconfigure(0, weight=0)
+    sub.grid_columnconfigure(1, weight=1)
+
+    side_panel = ctk.CTkFrame(master=sub, corner_radius=0, fg_color=MORADO_VIVO, width=300)
+    side_panel.grid(row=0, column=0, sticky="nsew")
+
+    header_frame = ctk.CTkFrame(master=side_panel, fg_color=BOTON_USUARIO, corner_radius=20, width=200, height=60)
+    header_frame.place(x=30, y=25)
+    ctk.CTkLabel(master=header_frame, text="Dr.maggie",
+                 font=ctk.CTkFont(size=30, weight="bold"),
+                 text_color=MAGENTA).place(relx=0.5, rely=0.5, anchor="center")
+
+    try:
+        logo_path = "Logo.png"
+        logo_pil_image = Image.open(logo_path)
+        logo_ctk_image = ctk.CTkImage(light_image=logo_pil_image, dark_image=logo_pil_image, size=(250, 250))
+        logo_label = ctk.CTkLabel(master=side_panel, image=logo_ctk_image, text="")
+        logo_label.place(relx=0.5, rely=0.55, anchor="center")
+    except Exception:
+        ctk.CTkLabel(master=side_panel, text="[Dra. Angie Ajquill\nGinecología y Obstetricia]",
+                     font=ctk.CTkFont(size=20, weight="bold"), text_color="white", justify="center").place(relx=0.5,
+                                                                                                           rely=0.5,
+                                                                                                           anchor="center")
+
+    main_content = ctk.CTkFrame(master=sub, fg_color="white", corner_radius=0)
+    main_content.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+    main_content.grid_columnconfigure(0, weight=1)
+    main_content.grid_rowconfigure(3, weight=1)
+
+    title_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
+    title_frame.grid(row=0, column=0, sticky="ew", pady=(10, 0))
+    title_frame.grid_columnconfigure(0, weight=1)
+    title_frame.grid_columnconfigure(1, weight=0)
+
+    title_text = "Actualizar ficha médica" if ficha_id_a_actualizar else "Crear ficha médica"
+
+    ctk.CTkLabel(master=title_frame, text=title_text,
+                 fg_color=MORADO_VIVO, text_color=MAGENTA,
+                 font=ctk.CTkFont(size=28, weight="bold"),
+                 corner_radius=40, width=320, height=60
+                 ).grid(row=0, column=0, sticky="w", padx=(30, 0))
+
+    ctk.CTkButton(master=title_frame, text="Cerrar ventana",
+                  command=sub.destroy, fg_color=MAGENTA, text_color="white",
+                  hover_color=MORADO_CLARO, font=ctk.CTkFont(size=18, weight="bold"),
+                  corner_radius=20, width=180, height=50
+                  ).grid(row=0, column=1, sticky="e", padx=(0, 30))
+
+    form_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
+    form_frame.grid(row=1, column=0, sticky="nsew", padx=(60, 0), pady=(10, 10))
+    form_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+    entries = {}
+
+    def campo(label_text, row, col_entry, colspan=1):
+
+        entry = ctk.CTkEntry(master=form_frame, fg_color="white", text_color="black",
+                             border_width=2, border_color=MORADO_VIVO, corner_radius=60, height=40,
+                             placeholder_text=f"Ingrese la {label_text}",
+                             font=ctk.CTkFont(size=16))
+        entry.grid(row=row, column=col_entry, columnspan=colspan, padx=5, pady=8, sticky="ew")
+        return entry
+
+    ctk.CTkLabel(master=form_frame, text=f"Paciente: {nombre_paciente}",
+                 fg_color=MORADO_VIVO, text_color="black",
+                 font=ctk.CTkFont(size=16, weight="bold"),
+                 corner_radius=20, anchor="center", height=40).grid(row=0, column=0, padx=5, pady=8, sticky="ew")
+
+    ctk.CTkLabel(master=form_frame, text=f"DPI: {dpi_paciente}",
+                 fg_color=MORADO_VIVO, text_color="black",
+                 font=ctk.CTkFont(size=16, weight="bold"),
+                 corner_radius=20, anchor="center", height=40).grid(row=0, column=1, padx=5, pady=8, sticky="ew")
+
+    ctk.CTkLabel(master=form_frame, text=f"No. Tel: {tel_paciente}",
+                 fg_color=MORADO_VIVO, text_color="black",
+                 font=ctk.CTkFont(size=16, weight="bold"),
+                 corner_radius=20, anchor="center", height=40).grid(row=0, column=2, padx=5, pady=8, sticky="ew")
+
+    entries['procedencia'] = campo("Procedencia:", 1, 0)
+    entries['ocupacion'] = campo("Ocupación:", 1, 1)
+    entries['fecha_nac'] = ctk.CTkEntry(master=form_frame, fg_color="white", text_color="black",
+                                        border_width=2, border_color=MORADO_VIVO, corner_radius=60, height=40,
+                                        placeholder_text=f"Ingrese la Fecha de naciemiento (AAAA-MM-DD)",
+                                        font=ctk.CTkFont(size=16))
+    entries['fecha_nac'].grid(row=1, column=2, columnspan=1, padx=5, pady=8, sticky="ew")
+
+    ctk.CTkFrame(master=form_frame, fg_color=MORADO_VIVO, corner_radius=20, height=50).grid(
+        row=2, column=0, padx=5, pady=8, sticky="ew")
+    ctk.CTkLabel(master=form_frame, text="Antecedentes:", font=ctk.CTkFont(size=16, weight="bold"),
+                 text_color="black", anchor="w", fg_color=MORADO_VIVO, bg_color=MORADO_VIVO).grid(row=2, column=0,
+                                                                                                  padx=20, pady=8,
+                                                                                                  sticky="w")
+    entries['antecedentes'] = ctk.CTkEntry(master=form_frame, fg_color=BOTON_USUARIO, text_color="black",
+                                           border_width=0, corner_radius=20, height=50,
+                                           font=ctk.CTkFont(size=16))
+    entries['antecedentes'].grid(row=2, column=1, columnspan=2, padx=5, pady=8, sticky="ew")
+
+    ctk.CTkFrame(master=form_frame, fg_color=MORADO_VIVO, corner_radius=20, height=50).grid(
+        row=3, column=0, padx=5, pady=8, sticky="ew")
+    ctk.CTkLabel(master=form_frame, text="Datos:", font=ctk.CTkFont(size=16, weight="bold"),
+                 text_color="black", anchor="w", fg_color=MORADO_VIVO, bg_color=MORADO_VIVO).grid(row=3, column=0,
+                                                                                                  padx=20, pady=8,
+                                                                                                  sticky="w")
+
+    ctk.CTkLabel(master=main_content, text="Ingrese los datos de la consulta:",
+                 font=ctk.CTkFont(size=20, weight="bold"), text_color=MAGENTA
+                 ).grid(row=2, column=0, padx=60, pady=(10, 5), sticky="w")
+
+    consulta_textbox = ctk.CTkTextbox(master=main_content, height=220,
+                                      corner_radius=20, border_width=2,
+                                      border_color=LILA, fg_color="white",
+                                      text_color="black", font=ctk.CTkFont(size=16))
+    consulta_textbox.grid(row=3, column=0, sticky="nsew", padx=60, pady=(0, 10))
+
+    if procedencia: entries['procedencia'].insert(0, procedencia)
+    if ocupacion: entries['ocupacion'].insert(0, ocupacion)
+    if fecha_nac: entries['fecha_nac'].insert(0, fecha_nac)
+    if antecedentes: entries['antecedentes'].insert(0, antecedentes)
+    if datos_consulta: consulta_textbox.insert("0.0", datos_consulta)
+
+    def actualizar_ficha():
+        if usuario_actual.rol != "Doctor":
+            messagebox.showerror("Error de Rol", "Solo un Doctor puede guardar una ficha médica.")
+            return
+
+        procedencia = entries['procedencia'].get()
+        ocupacion = entries['ocupacion'].get()
+        fecha_nac = entries['fecha_nac'].get()
+        antecedentes = entries['antecedentes'].get()
+        datos_consulta = consulta_textbox.get("1.0", "end-1c")
+
+        if not procedencia or not ocupacion or not datos_consulta:
+            messagebox.showwarning("Advertencia", "Debe llenar Procedencia, Ocupación y Datos de la Consulta.")
+            return
+
+        try:
+            if ficha_id_a_actualizar:
+                db.ejecutar("""
+                                UPDATE fichas
+                                SET datos=?, procedencia=?, ocupacion=?, antecedentes=?, fecha_nacimiento=?, 
+                                    fecha=datetime('now', 'localtime')
+                                WHERE id=?
+                            """,
+                            (datos_consulta, procedencia, ocupacion, antecedentes, fecha_nac, ficha_id_a_actualizar))
+
+                messagebox.showinfo("Éxito", "Ficha médica actualizada correctamente.")
+            else:
+                usuario_actual.crear_ficha_medica(
+                    paciente_id=dpi_paciente,
+                    datos=datos_consulta,
+                    procedencia=procedencia,
+                    ocupacion=ocupacion,
+                    antecedentes=antecedentes,
+                    fecha_nacimiento=fecha_nac
+                )
+                messagebox.showinfo("Éxito", "Ficha médica guardada correctamente.")
+
+            sub.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Fallo al guardar/actualizar la ficha: {e}")
+
+    button_text = "Actualizar Ficha" if ficha_id_a_actualizar else "Guardar Ficha"
+
+    ctk.CTkButton(master=main_content, text=button_text,
+                  command=actualizar_ficha, fg_color=ROSADO, text_color=MAGENTA,
+                  hover_color="#F0B4FB", font=ctk.CTkFont(size=24, weight="bold"),
+                  corner_radius=30, width=300, height=70
+                  ).grid(row=4, column=0, pady=(20, 10))
+#=================================================================
 def buscar_ficha():
     sub = ctk.CTkToplevel(app)
     sub.title("Buscar ficha de paciente")
@@ -543,7 +741,7 @@ def buscar_ficha():
             messagebox.showinfo("Éxito", f"Ficha y paciente encontrados: {p['nombre']}")
             sub.destroy()
 
-            crear_ventana_ficha_medica(
+            crear_ventana_ficha_medica_actualizar(
                 dpi_paciente=dpi_buscar,
                 nombre_paciente=p['nombre'],
                 tel_paciente=p['telefono'],
@@ -818,7 +1016,7 @@ def agendar_cita():
         fecha_date = date_entry.get_date()
         fecha = str(fecha_date)
         hora = hora_combo.get()
-        registrado_en = f"{fecha} {hora}:00"
+        registrado_en = f"{hora}:00"
 
         if not dpi or not direccion or hora == "Seleccione hora":
             messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
@@ -858,7 +1056,7 @@ def agendar_cita():
 
 def ver_citas():
     sub = ctk.CTkToplevel(app)
-    sub.title("Ver citas")
+    sub.title("Ver citas - Historial")
     sub.state('zoomed')
     sub.configure(fg_color="white")
 
@@ -884,8 +1082,7 @@ def ver_citas():
         logo_path = "Logo.png"
         logo_pil_image = Image.open(logo_path)
         logo_ctk_image = ctk.CTkImage(light_image=logo_pil_image, dark_image=logo_pil_image, size=(250, 250))
-        logo_label = ctk.CTkLabel(master=side_panel, image=logo_ctk_image, text="")
-        logo_label.place(relx=0.5, rely=0.5, anchor="center")
+        ctk.CTkLabel(master=side_panel, image=logo_ctk_image, text="").place(relx=0.5, rely=0.5, anchor="center")
     except Exception:
         ctk.CTkLabel(master=side_panel, text="[Dra. Angie Ajquill\nGinecología y Obstetricia]",
                      font=ctk.CTkFont(size=20, weight="bold"), text_color="white", justify="center").place(relx=0.5,
@@ -893,18 +1090,15 @@ def ver_citas():
                                                                                                            anchor="center")
 
     main_content = ctk.CTkFrame(master=sub, fg_color="white", corner_radius=0)
-    main_content.grid(row=0, column=1, sticky="nsew")
+    main_content.grid(row=0, column=1, columnspan=2, sticky="nsew")
 
     main_content.grid_columnconfigure(0, weight=1)
     main_content.grid_columnconfigure(1, weight=2)
     main_content.grid_columnconfigure(2, weight=1)
-
     main_content.grid_rowconfigure(0, weight=0)
-    main_content.grid_rowconfigure(1, weight=0)
-    main_content.grid_rowconfigure(2, weight=1)
-    main_content.grid_rowconfigure(3, weight=0)
+    main_content.grid_rowconfigure(1, weight=1)
 
-    ctk.CTkLabel(master=main_content, text="Ver citas",
+    ctk.CTkLabel(master=main_content, text="Historial de Citas",
                  fg_color=MORADO_VIVO, text_color=MAGENTA,
                  font=ctk.CTkFont(size=30, weight="bold"),
                  corner_radius=40, width=320, height=60
@@ -915,30 +1109,71 @@ def ver_citas():
                   hover_color=MORADO_CLARO, font=ctk.CTkFont(size=20, weight="bold"),
                   corner_radius=20, width=220, height=60
                   ).grid(row=0, column=2, sticky="e", padx=(0, 40), pady=(20, 20))
+
+    # SOLUCIÓN FINAL: Se selecciona la nueva columna 'registrado_en' y se le da el alias 'hora'.
+    # ESTO REQUIERE QUE LA DB TENGA LA COLUMNA 'registrado_en' (BORRAR el archivo .db si sigue dando error).
     citas_db = db.ejecutar("""
-        SELECT c.fecha, p.nombre AS paciente_nombre, c.registrado_en 
+        SELECT 
+            c.fecha, 
+            c.registrado_en AS hora,  
+            p.nombre AS paciente_nombre, 
+            p.DPI
         FROM citas c
         JOIN pacientes p ON c.paciente_id = p.DPI
-        ORDER BY c.registrado_en DESC
+        ORDER BY c.fecha DESC
     """, fetch=True)
+
+    # --- DEBUG: Verifica qué devuelve la base de datos ---
+    if citas_db:
+        print("Citas encontradas en la DB:", citas_db)
+    else:
+        print("La consulta a la DB para citas devolvió una lista vacía.")
+    # ----------------------------------------------------
 
     headers = ["Fecha", "Hora", "Paciente", "DPI"]
     data = []
 
-
     for fila in citas_db:
-        fecha_completa = fila['registrado_en'].split(' ')
-        fecha = fecha_completa[0]
-        hora = fecha_completa[1][:5]
-        data.append((fecha, hora, fila['paciente_nombre'], fila['DPI']))
+        # Leemos los valores directamente de las columnas (usando el alias 'hora').
+        fecha = fila['fecha']
+        hora = fila['hora']
+
+        # Si la columna 'hora' (ahora 'registrado_en') está vacía o es None, mostramos un guion.
+        hora_display = hora if hora and hora.strip() else "-"
+
+        data.append((fecha, hora_display, fila['paciente_nombre'], fila['DPI']))
 
     if not data:
         ctk.CTkLabel(master=main_content, text="No hay citas agendadas.",
                      font=ctk.CTkFont(size=24, weight="bold"), text_color="gray"
                      ).grid(row=1, column=0, columnspan=3, pady=100)
     else:
-        crear_ventana_tabla("Citas Agendadas", headers, data)
-        sub.destroy()
+        scroll_frame = ctk.CTkScrollableFrame(
+            master=main_content,
+            label_text="Citas Agendadas",
+            fg_color="transparent",
+            label_font=ctk.CTkFont(size=20, weight="bold")
+        )
+        scroll_frame.grid(row=1, column=0, columnspan=3, padx=40, pady=(0, 40), sticky="nsew")
+
+        for i in range(len(headers)):
+            scroll_frame.grid_columnconfigure(i, weight=1)
+
+        header_color = MORADO_VIVO
+        for i, col_name in enumerate(headers):
+            ctk.CTkLabel(master=scroll_frame, text=col_name, fg_color=header_color, text_color="white",
+                         font=ctk.CTkFont(size=16, weight="bold"), height=40, corner_radius=10
+                         ).grid(row=0, column=i, sticky="ew", padx=5, pady=(0, 5))
+
+        row_color_1 = LILA
+        row_color_2 = "white"
+
+        for i, row_data in enumerate(data, start=1):
+            bg_color = row_color_1 if i % 2 == 0 else row_color_2
+            for j, valor in enumerate(row_data):
+                ctk.CTkLabel(master=scroll_frame, text=str(valor), fg_color=bg_color, text_color="black",
+                             font=ctk.CTkFont(size=14), height=30, justify='left'
+                             ).grid(row=i, column=j, sticky="ew", padx=5, pady=1)
 
 
 def cancelar_cita():
@@ -1109,7 +1344,7 @@ def ver_inventario():
 
 
 def ver_medicamentos_comprados():
-    movimientos_db = db.ejecutar("""
+    movimientos_db  = db.ejecutar("""
         SELECT m.fecha, p.nombre AS medicamento, m.cantidad, m.precio_unitario, u.nombre AS proveedor
         FROM movimientos m
         JOIN productos p ON m.producto_id = p.id
@@ -1122,10 +1357,7 @@ def ver_medicamentos_comprados():
     data = []
 
     if not movimientos_db:
-        data = [
-            ["2024-05-10", "Ampicilina 500mg", 200, 35.00, "Entrada", "Droguería A"],
-            ["2024-04-20", "Metformina 850mg", 400, 20.00, "Entrada", "Farmacéutica B"],
-        ]
+        messagebox.showwarning("No existen movimientos registrados")
     else:
         for m in movimientos_db:
             data.append((
@@ -1136,7 +1368,6 @@ def ver_medicamentos_comprados():
                 m['tipo'].capitalize(),
                 m['proveedor']
             ))
-
     crear_ventana_tabla("Registro de Compras/Movimientos de Medicamentos", headers, data)
 
 
@@ -1427,44 +1658,53 @@ def menu_proveedor():
     entry_precio.grid(row=2, column=1, padx=(20, 150), pady=25, sticky="w")
 
     def realizar_venta_proveedor():
-        nombre = nombre_var.get()
-        cantidad = cantidad_var.get()
-        precio = precio_var.get()
+        nombre = nombre_var.get().strip()
+        cantidad = cantidad_var.get().strip()
+        precio = precio_var.get().strip()
 
-        if not nombre or not cantidad:
-            messagebox.showwarning("Advertencia", "Nombre y Cantidad son obligatorios.")
+        if not nombre or not cantidad or not precio:
+            messagebox.showwarning("Advertencia", "Nombre, Cantidad (Stock) y Precio son obligatorios.")
             return
 
         try:
+            # Validar y convertir la Cantidad a entero (Stock)
             cantidad_int = int(cantidad)
             if cantidad_int <= 0:
-                messagebox.showwarning("Advertencia", "La cantidad debe ser un valor positivo.")
+                messagebox.showwarning("Advertencia", "La Cantidad (Stock) debe ser un valor positivo.")
                 return
         except ValueError:
-            messagebox.showwarning("Advertencia", "La cantidad tiene un formato incorrecto.")
+            messagebox.showwarning("Advertencia",
+                                   "La Cantidad (Stock) tiene un formato incorrecto (debe ser un número entero).")
             return
 
         try:
-            resultado = Proveedor.vender_producto(
-                db=db,
-                nombre=nombre,
-                cantidad=cantidad_int,
-                doctor_user="docanles",
-                doctor_pass="1234",
-                proveedor_id=usuario_actual.id
-            )
+            precio_float = float(precio)
+            if precio_float <= 0:
+                messagebox.showwarning("Advertencia", "El Precio de Venta debe ser mayor que cero.")
+                return
+        except ValueError:
+            messagebox.showwarning("Advertencia",
+                                   "El Precio de Venta tiene un formato incorrecto (debe ser un número decimal).")
+            return
 
-            messagebox.showinfo("Venta Realizada",
-                                f"Venta registrada:\nMedicamento: {resultado['producto']}\nCantidad: {resultado['cantidad']}\nPrecio unitario: Q{resultado['precio_unitario']:.2f}\nTotal: Q{resultado['total']:.2f}")
+        try:
+            proveedor = Proveedor(nombre=usuario_actual.nombre, rol=usuario_actual.rol, db=db)
+            proveedor.id = usuario_actual.id
+            resultado = proveedor.agregar_producto(
+                nombre=nombre,
+                precio=precio_float,
+                stock=cantidad_int
+            )
+            messagebox.showinfo("Registro Exitoso",
+                                f"Producto '{nombre}' registrado/actualizado en el inventario.\nStock Añadido: {cantidad_int}\nPrecio de Venta: Q{precio_float:.2f}")
 
             nombre_var.set("")
             cantidad_var.set("")
             precio_var.set("")
 
-        except ValueError as e:
-            messagebox.showerror("Error de Venta", str(e))
         except Exception as e:
-            messagebox.showerror("Error", f"Ocurrió un error inesperado: {e}")
+            messagebox.showerror("Error de Registro", f"Ocurrió un error inesperado al registrar el producto: {e}")
+
 
     ctk.CTkButton(master=form_frame, text="Vender Medicamento",
                   command=realizar_venta_proveedor,
@@ -1485,8 +1725,6 @@ def menu_proveedor():
                   hover_color=CAFE_CLARO, font=ctk.CTkFont(size=20, weight="bold"),
                   corner_radius=20, width=150, height=50
                   ).place(relx=1.0, rely=1.0, anchor="se", x=-20, y=-20)
-
-
 def interfaz_login():
     global usuario_actual
     app.state('zoomed')
