@@ -1709,7 +1709,7 @@ def crear_interfaz_principal():
         ctk.CTkLabel(master=main_content, image=img_ctk, text="").grid(row=1,column=1 ,columnspan=2, padx=40, pady=(80, 0),
                                                                        sticky="n")
     except Exception:
-        ctk.CTkLabel(master=main_content, text="[Imagen consulta]",
+        ctk.CTkLabel(master=main_content, text="[Imagen de consulta]",
                      text_color="gray", font=ctk.CTkFont(size=20, slant="italic")
                      ).grid(row=1, column=2, padx=40, pady=(80, 0), sticky="n")
 
