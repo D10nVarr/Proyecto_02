@@ -53,19 +53,20 @@ class BaseDatos:
             )
         """)
         self.ejecutar("""
-            CREATE TABLE IF NOT EXISTS movimientos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tipo TEXT NOT NULL,
-                producto_id INTEGER NOT NULL,
-                cantidad INTEGER NOT NULL,
-                usuario_id INTEGER NOT NULL,
-                fecha TEXT NOT NULL,
-                precio_unitario REAL,
-                total REAL,
-                FOREIGN KEY(producto_id) REFERENCES productos(id),
-                FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
-            )
-        """)
+                    CREATE TABLE IF NOT EXISTS movimientos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        tipo TEXT NOT NULL,
+                        producto_id INTEGER NOT NULL,
+                        cantidad INTEGER NOT NULL,
+                        usuario_id INTEGER NOT NULL,
+                        fecha TEXT NOT NULL,
+                        precio_unitario REAL,
+                        total REAL,
+                        proveedor_nombre TEXT, 
+                        FOREIGN KEY(producto_id) REFERENCES productos(id),
+                        FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+                    )
+                """)
         self.ejecutar("""
             CREATE TABLE IF NOT EXISTS pacientes (
                 DPI INTEGER PRIMARY KEY,
@@ -180,3 +181,4 @@ class Proveedor(Usuario):
             ("salida", pid, cantidad, proveedor_id, datetime.now().isoformat(), precio_unitario, total)
         )
         return {"producto": nombre, "cantidad": cantidad, "precio_unitario": precio_unitario, "total": total}
+
