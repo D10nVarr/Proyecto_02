@@ -62,6 +62,7 @@ class BaseDatos:
                 fecha TEXT NOT NULL,
                 precio_unitario REAL,
                 total REAL,
+                proveedor_nombre TEXT, 
                 FOREIGN KEY(producto_id) REFERENCES productos(id),
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
