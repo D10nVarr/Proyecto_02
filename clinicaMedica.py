@@ -1213,8 +1213,7 @@ def ver_citas():
                   corner_radius=20, width=220, height=60
                   ).grid(row=0, column=2, sticky="e", padx=(0, 40), pady=(20, 20))
 
-    # SOLUCIÓN FINAL: Se selecciona la nueva columna 'registrado_en' y se le da el alias 'hora'.
-    # ESTO REQUIERE QUE LA DB TENGA LA COLUMNA 'registrado_en' (BORRAR el archivo .db si sigue dando error).
+
     citas_db = db.ejecutar("""
         SELECT 
             c.fecha, 
